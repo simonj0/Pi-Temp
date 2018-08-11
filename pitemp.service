@@ -1,0 +1,12 @@
+[Unit]
+Description=Webserver for graphing Temperature+Humidity over time
+
+[Service]
+ExecStart=/bin/bash -c 'python3 /opt/Pi-Temp/pitemp-server.py'
+Restart=always
+User=pi
+Group=pi
+WorkingDirectory=/opt/Pi-Temp
+
+[Install]
+WantedBy=multi-user.target
