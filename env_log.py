@@ -36,7 +36,7 @@ def log_values(sensor_id, temp, hum):
 	conn=sqlite3.connect('./pi-temp.db')
 	curs=conn.cursor()
 	curs.execute("CREATE TABLE IF NOT EXISTS sensor_values (rDatetime datetime, sensorID text, temperature numeric, humidity numeric)")
-	curs.execute("INSERT INTO sensor_values values(datetime(CURRENT_TIMESTAMP, 'localtime'), (?), (?), (?))", (sensor_id, temp, hum))
+	curs.execute("INSERT INTO sensor_values values(datetime('now', 'localtime'), (?), (?), (?))", (sensor_id, temp, hum))
 	conn.commit()
 	conn.close()
 humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.AM2302, 17)

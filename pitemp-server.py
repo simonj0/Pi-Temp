@@ -70,19 +70,17 @@ def temp_current():
 
 @app.route("/temp_history", methods=['GET'])  #Add date limits in the URL #Arguments: from=2015-03-04&to=2015-03-05
 def temp_history():
-	values, timezone, from_date_str, to_date_str = get_records()
+	values, from_date_str, to_date_str = get_records()
 
 	# Create new record tables so that datetimes are adjusted back to the user browser's time zone.
-	time_adjusted_values = []
+	adjusted_values = []
 	for record in values:
-		local_timedate = arrow.get(record[0], "YYYY-MM-DD HH:mm").to(timezone)
-		time_adjusted_values.append([local_timedate.format('YYYY-MM-DD HH:mm'), round(record[2],1), round(record[3],1)])
+		adjusted_values.append([record[0], round(record[2],1), round(record[3],1)])
 
-	print("rendering temp_history.html with: %s, %s, %s" % (timezone, from_date_str, to_date_str))
+	print("rendering temp_history.html with: %s, %s" % (from_date_str, to_date_str))
 
 	return render_template("temp_history.html",
-		timezone = timezone,
-		values = time_adjusted_values,
+		values = adjusted_values,
 		from_date = from_date_str, 
 		to_date = to_date_str,
 		values_count = len(values),
@@ -106,7 +104,6 @@ def get_records():
 	import sqlite3
 	from_date_str = request.args.get('from',time.strftime("%Y-%m-%d 00:00")) #Get the from date value from the URL
 	to_date_str   = request.args.get('to',time.strftime("%Y-%m-%d %H:%M"))   #Get the to date value from the URL
-	timezone      = request.args.get('timezone','Etc/UTC');
 	range_h_form  = request.args.get('range_h','');  #This will return a string, if field range_h exists in the request
 	range_h_int   = "NaN"  #initialise this variable with not a number
 
@@ -119,47 +116,38 @@ def get_records():
 		print("range_h_form not a number")
 
 
-	print("Received from browser: %s, %s, %s, %s" % (from_date_str, to_date_str, timezone, range_h_int))
+	print("Received from browser: %s, %s, %s" % (from_date_str, to_date_str, range_h_int))
 	
 	if not validate_date(from_date_str):			# Validate date before sending it to the DB
 		from_date_str = time.strftime("%Y-%m-%d 00:00")
 	if not validate_date(to_date_str):
 		to_date_str   = time.strftime("%Y-%m-%d %H:%M")		# Validate date before sending it to the DB
-	print('2. From: %s, to: %s, timezone: %s' % (from_date_str,to_date_str,timezone))
-	# Create datetime object so that we can convert to UTC from the browser's local time
-	from_date_obj = datetime.datetime.strptime(from_date_str,'%Y-%m-%d %H:%M')
-	to_date_obj   = datetime.datetime.strptime(to_date_str,'%Y-%m-%d %H:%M')
+	print('2. From: %s, to: %s' % (from_date_str,to_date_str))
 
 	# If range_h is defined, we don't need the from and to times
 	if isinstance(range_h_int,int):	
-		arrow_time_from = arrow.utcnow().replace(hours=-range_h_int)
-		arrow_time_to   = arrow.utcnow()
-		from_date_utc   = arrow_time_from.strftime("%Y-%m-%d %H:%M")	
-		to_date_utc     = arrow_time_to.strftime("%Y-%m-%d %H:%M")
-		from_date_str   = arrow_time_from.to(timezone).strftime("%Y-%m-%d %H:%M")
-		to_date_str     = arrow_time_to.to(timezone).strftime("%Y-%m-%d %H:%M")
-	else:
-		#Convert datetimes to UTC so we can retrieve the appropriate records from the database
-		from_date_utc   = arrow.get(from_date_obj, timezone).to('Etc/UTC').strftime("%Y-%m-%d %H:%M")	
-		to_date_utc     = arrow.get(to_date_obj, timezone).to('Etc/UTC').strftime("%Y-%m-%d %H:%M")
+		arrow_time_from = arrow.now().replace(hours=-range_h_int)
+		arrow_time_to   = arrow.now()
+		from_date_str   = arrow_time_from.strftime("%Y-%m-%d %H:%M")
+		to_date_str     = arrow_time_to.strftime("%Y-%m-%d %H:%M")
 
 	try:
 		conn = sqlite3.connect('./pi-temp.db')
 		curs = conn.cursor()
-		curs.execute("SELECT * FROM sensor_values WHERE rDateTime BETWEEN ? AND ?", (from_date_utc.format('YYYY-MM-DD HH:mm'), to_date_utc.format('YYYY-MM-DD HH:mm')))
+		curs.execute("SELECT * FROM sensor_values WHERE rDateTime BETWEEN ? AND ?", (from_date_str.format('YYYY-MM-DD HH:mm'), to_date_str.format('YYYY-MM-DD HH:mm')))
 		values = curs.fetchall()
 	except:
 		values = []
 	conn.close()
 
-	return [values, timezone, from_date_str, to_date_str]
+	return [values, from_date_str, to_date_str]
 
 @app.route("/to_plotly", methods=['GET'])  #This method will send the data to ploty.
 def to_plotly():
 	import plotly.plotly as py
 	import plotly.graph_objs as go
 
-	temperatures, humidities, timezone, from_date_str, to_date_str = get_records()
+	temperatures, humidities, from_date_str, to_date_str = get_records()
 
 	# Create new record tables so that datetimes are adjusted back to the user browser's time zone.
 	time_series_adjusted_tempreratures = []
