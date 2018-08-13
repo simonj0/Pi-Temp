@@ -48,9 +48,9 @@
       <div class="row">
       <div class="eleven columns">
           <div class="one column">
-              <div class="one column">
+              <!--div class="one column">
                   <a href="" id="plotly" style="position:relative;top:15px">Plotly</a>
-            </div>
+            </div-->
           <a href="/temp_current" style="position:relative;top:15px">Current</a>
            </div>
         <form id="range_select" action = "/temp_history" method="GET">
@@ -70,9 +70,9 @@
         </form>
       </div>
     </div>
-    <div class="row">
+    <!--div class="row">
      <a href="" id="plotly_url" target="_blank"></a><span id="plotly_wait"></span>
-    </div>
+    </div-->
       <div class="row" style="margin-top: 5%">
         <strong>Showing all records</strong>
         <div class="u-full-width">
@@ -196,11 +196,11 @@
           0: { title: 'Temperature (°C)', titleTextStyle: {color: '#dc3912'} },
           1: { title: 'Humidity (%)', titleTextStyle: {color: '#3366cc'} }
         },
-		vAxis: {
+		/*vAxis: {
           viewWindow: {
             max: 100
           }
-        },
+        },*/
         curveType: 'function'  //Makes line curved
       };
       var chart = new google.visualization.LineChart(document.getElementById('chart_temps'));

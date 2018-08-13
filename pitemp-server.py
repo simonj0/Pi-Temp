@@ -142,7 +142,7 @@ def get_records():
 
 	return [values, from_date_str, to_date_str]
 
-@app.route("/to_plotly", methods=['GET'])  #This method will send the data to ploty.
+'''@app.route("/to_plotly", methods=['GET'])  #This method will send the data to ploty.
 def to_plotly():
 	import plotly.plotly as py
 	import plotly.graph_objs as go
@@ -201,7 +201,7 @@ def to_plotly():
 	fig = Figure(data=data, layout=layout)
 	plot_url = py.plot(fig, filename='lab_temp_hum')
 
-	return plot_url
+	return plot_url'''
 
 def validate_date(d):
     try:

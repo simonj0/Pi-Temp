@@ -1,2 +1,4 @@
 flask
 arrow
+Adafruit_DHT
+plotly

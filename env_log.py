@@ -48,5 +48,5 @@ humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.AM2302, 17)
 # temperature = random.randint(10,30)
 if humidity is not None and temperature is not None:
 	log_values("1", temperature, humidity)
-else:
-	log_values("1", -999, -999)
+#else:
+#	log_values("1", -999, -999)
