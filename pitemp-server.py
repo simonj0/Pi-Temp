@@ -44,7 +44,7 @@ The user can explore historical data to Plotly for visualisation and processing.
  // 10. END
 '''
 
-from flask import Flask, request, redirect, url_for, render_template
+from flask import Flask, request, redirect, url_for, render_template, jsonify
 import time
 import datetime
 import arrow
@@ -52,15 +52,17 @@ import arrow
 app = Flask(__name__)
 app.debug = True # Make this False if you are no longer debugging
 
+lastCacheTime = 0
+cachedTemperature = 0
+cachedHumidity = 0
+
 @app.route("/")
 def root():
     return redirect(url_for('temp_current'))
 
 @app.route("/temp_current")
 def temp_current():
-	import sys
-	import Adafruit_DHT
-	humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.AM2302, 17)
+	humidity, temperature = get_values()
 	if humidity is not None and temperature is not None:
 		return render_template("temp_current.html",temp=temperature,hum=humidity)
 	else:
@@ -85,6 +87,20 @@ def temp_history():
 		to_date = to_date_str,
 		values_count = len(values),
 		query_string = request.query_string)
+
+@app.route("/temp_api")
+def temp_api():
+	humidity, temperature = get_values()
+	return jsonify({'humidity': humidity, 'temperature': temperature})
+
+def get_values():
+	global lastCacheTime, cachedHumidity, cachedTemperature
+	currentTime = time.time()*1000
+	if lastCacheTime + 5000 < currentTime:
+		lastCacheTime = currentTime
+		import Adafruit_DHT
+		cachedHumidity, cachedTemperature = Adafruit_DHT.read_retry(Adafruit_DHT.AM2302, 17)
+	return [cachedHumidity, cachedTemperature]
 
 def get_records():
 	import sqlite3
