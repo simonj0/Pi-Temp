@@ -1,52 +1,38 @@
 #!/usr/bin/env python
-'''
-FILE NAME
-env_log.py
-1. WHAT IT DOES
-Takes a reading from a DHT sensor and records the values in an SQLite3 database using a Raspberry Pi.
-2. REQUIRES
-* Any Raspberry Pi
-* A DHT sensor
-* A 10kOhm resistor
-* Jumper wires
-3. ORIGINAL WORK
-Raspberry Full stack 2015, Peter Dalmaris
-4. HARDWARE
-D17: Data pin for sensor
-5. SOFTWARE
-Command line terminal
-Simple text editor
-Libraries:
 import sqlite3
 import sys
 import Adafruit_DHT
-6. WARNING!
-None
-7. CREATED
-8. TYPICAL OUTPUT
-No text output. Two new records are inserted in the database when the script is executed
- // 9. COMMENTS
---
- // 10. END
-'''
-import sqlite3
-import sys
-import Adafruit_DHT
-def log_values(sensor_id, temp, hum):
-	conn=sqlite3.connect('./pi-temp.db')
-	curs=conn.cursor()
-	curs.execute("CREATE TABLE IF NOT EXISTS sensor_values (rDatetime datetime, sensorID text, temperature numeric, humidity numeric)")
-	curs.execute("INSERT INTO sensor_values values(datetime('now', 'localtime'), (?), (?), (?))", (sensor_id, temp, hum))
-	conn.commit()
-	conn.close()
+def log_values(conn, sensor_id, temp, hum):
+    curs = conn.cursor()
+    curs.execute("CREATE TABLE IF NOT EXISTS sensor_values (rDatetime datetime, sensorID text, temperature numeric, humidity numeric)")
+    curs.execute("INSERT INTO sensor_values values(datetime('now', 'localtime'), (?), (?), (?))", (sensor_id, temp, hum))
+    conn.commit()
+    conn.close()
+
+def check_values(conn, temperature, humidity):
+    if temperature is None or humidity is None:
+        return False
+    if humidity > 100 or humidity < 0:
+        return False
+    if temperature > 100 or temperature < -50:
+        return False
+    try:
+        curs = conn.cursor()
+        # get last value from within the past 8 minutes
+        curs.execute("SELECT * FROM sensor_values WHERE rDatetime > datetime('now', '-8 minutes', 'localtime') ORDER BY 1 DESC LIMIT 1")
+        value = curs.fetchone()
+        if value is not None:
+            prev_temperature = value[2]
+            prev_humidity = value[3]
+            if abs(temperature - prev_temperature) > max(2, prev_temperature*0.1) or abs(humidity - prev_humidity) > max(2, prev_humidity*0.1):
+                return False
+    except:
+        pass
+
+    return True
+    
+
+conn = sqlite3.connect('./pi-temp.db')
 humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.AM2302, 17)
-# If you don't have a sensor but still wish to run this program, comment out all the
-# sensor related lines, and uncomment the following lines (these will produce random
-# numbers for the temperature and humidity variables):
-# import random
-# humidity = random.randint(1,100)
-# temperature = random.randint(10,30)
-if humidity is not None and temperature is not None:
-	log_values("1", temperature, humidity)
-#else:
-#	log_values("1", -999, -999)
+if check_values(conn, temperature, humidity):
+    log_values(conn, '1', temperature, humidity)

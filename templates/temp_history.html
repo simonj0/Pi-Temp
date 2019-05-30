@@ -15,16 +15,16 @@
     <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
     <!-- CSS
     –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-    <link rel="stylesheet" href="/static/css/normalize.css">
-    <link rel="stylesheet" href="/static/css/skeleton.css">
+    <link rel="stylesheet" href="static/css/normalize.css">
+    <link rel="stylesheet" href="static/css/skeleton.css">
     <!-- Favicon
     –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-    <link rel="icon" type="image/png" href="/static/images/favicon.png">
+    <link rel="icon" type="image/png" href="static/images/favicon.png">
   </head>
   <body>
     <div class="container">
       <div class="row">
-          <form id="datetime_range" action="/temp_history" method="GET">
+          <form id="datetime_range" action="temp_history" method="GET">
             <!-- <div class="row">          -->
               <div class="four columns">
                 <label for="from">From date</label>
@@ -51,9 +51,9 @@
               <!--div class="one column">
                   <a href="" id="plotly" style="position:relative;top:15px">Plotly</a>
             </div-->
-          <a href="/temp_current" style="position:relative;top:15px">Current</a>
+          <a href="temp_current" style="position:relative;top:15px">Current</a>
            </div>
-        <form id="range_select" action = "/temp_history" method="GET">
+        <form id="range_select" action = "temp_history" method="GET">
           <input type="hidden" class="timezone" name="timezone" />
           <div class="one column">
             <input type="radio" name="range_h" value="3" id="radio_3" /><label for="radio_3">3hrs</label>
@@ -125,8 +125,8 @@
   </body>
   <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
   <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
-  <link rel="stylesheet" type="text/css" href="/static/css/jquery.datetimepicker.css"/ >
-  <script src="/static/javascript/jquery.datetimepicker.full.js"></script>
+  <link rel="stylesheet" type="text/css" href="static/css/jquery.datetimepicker.css"/ >
+  <script src="static/javascript/jquery.datetimepicker.full.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jstimezonedetect/1.0.4/jstz.min.js" ></script>
   <script>
     jQuery( "#datetime_range" ).submit(function( event ) {
@@ -151,7 +151,7 @@
       jQuery("#plotly_wait").text("Sending data...");
       jQuery("#plotly_url").text("");
       {% autoescape false %}
-      jQuery.get("/to_plotly?{{query_string}}")
+      jQuery.get("to_plotly?{{query_string}}")
       {% endautoescape %}
         .done(function( data ) {
           jQuery("#plotly_url").attr("href",data);
@@ -196,11 +196,12 @@
           0: { title: 'Temperature (°C)', titleTextStyle: {color: '#dc3912'} },
           1: { title: 'Humidity (%)', titleTextStyle: {color: '#3366cc'} }
         },
-		/*vAxis: {
+		vAxis: {
           viewWindow: {
+            min: 0,
             max: 100
           }
-        },*/
+        },
         curveType: 'function'  //Makes line curved
       };
       var chart = new google.visualization.LineChart(document.getElementById('chart_temps'));

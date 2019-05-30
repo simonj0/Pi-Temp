@@ -49,8 +49,43 @@ import time
 import datetime
 import arrow
 
+class ReverseProxied(object):
+    '''Wrap the application in this middleware and configure the 
+    front-end server to add these headers, to let you quietly bind 
+    this to a URL other than / and to an HTTP scheme that is 
+    different than what is used locally.
+
+    In nginx:
+    location /myprefix {
+        proxy_pass http://192.168.0.1:5001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Scheme $scheme;
+        proxy_set_header X-Script-Name /myprefix;
+        }
+
+    :param app: the WSGI application
+    '''
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        script_name = environ.get('HTTP_X_SCRIPT_NAME', '')
+        if script_name:
+            environ['SCRIPT_NAME'] = script_name
+            path_info = environ['PATH_INFO']
+            if path_info.startswith(script_name):
+                environ['PATH_INFO'] = path_info[len(script_name):]
+
+        scheme = environ.get('HTTP_X_SCHEME', '')
+        if scheme:
+            environ['wsgi.url_scheme'] = scheme
+        return self.app(environ, start_response)
+
+
 app = Flask(__name__)
-app.debug = True # Make this False if you are no longer debugging
+app.wsgi_app = ReverseProxied(app.wsgi_app)
+app.debug = False # Make this False if you are no longer debugging
 
 lastCacheTime = 0
 cachedTemperature = 0
@@ -102,13 +137,10 @@ def get_values():
 
 def get_records():
 	import sqlite3
-	from_date_str = request.args.get('from',time.strftime("%Y-%m-%d 00:00")) #Get the from date value from the URL
-	to_date_str   = request.args.get('to',time.strftime("%Y-%m-%d %H:%M"))   #Get the to date value from the URL
+	from_date_str = request.args.get('from') #Get the from date value from the URL
+	to_date_str   = request.args.get('to')   #Get the to date value from the URL
 	range_h_form  = request.args.get('range_h','');  #This will return a string, if field range_h exists in the request
 	range_h_int   = "NaN"  #initialise this variable with not a number
-
-	print("REQUEST:")
-	print(request.args)
 	
 	try: 
 		range_h_int = int(range_h_form)
@@ -119,14 +151,14 @@ def get_records():
 	print("Received from browser: %s, %s, %s" % (from_date_str, to_date_str, range_h_int))
 	
 	if not validate_date(from_date_str):			# Validate date before sending it to the DB
-		from_date_str = time.strftime("%Y-%m-%d 00:00")
+		from_date_str = arrow.now().strftime("%Y-%m-%d 00:00")
 	if not validate_date(to_date_str):
-		to_date_str   = time.strftime("%Y-%m-%d %H:%M")		# Validate date before sending it to the DB
+		to_date_str   = arrow.now().shift(minutes=+1).strftime("%Y-%m-%d %H:%M")		# Validate date before sending it to the DB
 	print('2. From: %s, to: %s' % (from_date_str,to_date_str))
 
 	# If range_h is defined, we don't need the from and to times
 	if isinstance(range_h_int,int):	
-		arrow_time_from = arrow.now().replace(hours=-range_h_int)
+		arrow_time_from = arrow.now().shift(hours=-range_h_int)
 		arrow_time_to   = arrow.now()
 		from_date_str   = arrow_time_from.strftime("%Y-%m-%d %H:%M")
 		to_date_str     = arrow_time_to.strftime("%Y-%m-%d %H:%M")
@@ -207,8 +239,9 @@ def validate_date(d):
     try:
         datetime.datetime.strptime(d, '%Y-%m-%d %H:%M')
         return True
-    except ValueError:
+    except:
         return False
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8080)
+    #app.run(host='0.0.0.0', port=8080)
+    app.run(port=8080)
